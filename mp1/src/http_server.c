@@ -35,8 +35,12 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	if(argc!=2){
+		printf("argument error\n");
+		exit(1);
+	}
 	int sockfd, new_fd,numbytes,bytescount;  // listen on sock_fd, new connection on new_fd
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage their_addr; // connector's address information
@@ -56,7 +60,7 @@ int main(void)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
 
-	if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
+	if ((rv = getaddrinfo(NULL, argv[1], &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
 	}
@@ -169,6 +173,7 @@ int main(void)
             	bytescount = fread(readbuf, sizeof(char), FN_LENGTH, fp);
             	if(bytescount<=0){
             		send(new_fd, readbuf, bytescount, 0);
+
             		break;
             	}
 				else{
