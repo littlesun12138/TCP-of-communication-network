@@ -140,9 +140,9 @@ int main(int argc, char *argv[])
 	// design my HTTP GET
 	char http_request[FN_LENGTH];
 
-	strncpy(http_request,"GET ",4*BYTES_SIZE);
+	strncpy(http_request,"GET /",5*BYTES_SIZE);
 	strcat(http_request,file_name);
-	strcat(http_request," HTTP/1,1\r\nUser-Agent: Wget/1.12 (linux-gnu)\r\nHost: ");
+	strcat(http_request," HTTP/1.1\r\nUser-Agent: Wget/1.12 (linux-gnu)\r\nHost: ");
 	strcat(http_request,ipad_name);
 	strcat(http_request,":");
 	strcat(http_request,port_name);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 	printf("Portname: %s\n",port_name);
 	printf("FileName: %s\n",file_name);
 	//send this get to server
-	if (send(sockfd,(char*)http_request,sizeof http_request,0) == -1){
+	if (send(sockfd,(char*)http_request,strlen(http_request),0) == -1){
 		perror("send");
 		exit(1);
 	}
