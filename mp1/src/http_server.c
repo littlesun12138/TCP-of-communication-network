@@ -136,7 +136,7 @@ int main(void)
             //now start install filename
 			str_end=strchr(http_request+5,' ');		
 			//no pathname is download
-			if(str_end-http_request-5==0){
+			if(str_end-http_request-5<=0){
 				if (send(new_fd, error_sig, strlen(error_sig), 0) == -1){
 					perror("send");
 				}
