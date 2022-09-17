@@ -168,6 +168,7 @@ int main(void)
             while(1){
             	bytescount = fread(readbuf, sizeof(char), FN_LENGTH, fp);
             	if(bytescount<=0){
+            		send(new_fd, readbuf, bytescount, 0);
             		break;
             	}
 				else{
