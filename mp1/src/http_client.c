@@ -16,8 +16,8 @@
 
 #define PORT "3490" // the port client will be connecting to 
 #define PORT_80 "80"
-#define FN_LENGTH 1024
-#define MAXDATASIZE 1024 // max number of bytes we can get at once 
+#define FN_LENGTH 4096
+#define MAXDATASIZE 4096 // max number of bytes we can get at once 
 #define BYTES_SIZE 8
 #define PORTLEN 10
 
