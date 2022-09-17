@@ -18,7 +18,7 @@
 #define PORT "3490"  // the port users will be connecting to
 
 #define BACKLOG 10	 // how many pending connections queue will hold
-#define FN_LENGTH 1024
+#define FN_LENGTH 4096
 
 void sigchld_handler(int s)
 {
@@ -130,7 +130,7 @@ int main(void)
 	    		exit(1);
 			}
             char file_name[FN_LENGTH];
-            memset(file_name, 0, sizeof file_name);
+            memset(file_name, 0, FN_LENGTH);
 
 			char* str_end;
             //now start install filename
@@ -141,7 +141,7 @@ int main(void)
 					perror("send");
 				}
                 close(new_fd);
-                exit(1);
+                exit(0);
 			}	
 			strncpy(file_name, http_request+5, str_end-http_request-5);
 			printf("%s\n",file_name);
@@ -154,14 +154,14 @@ int main(void)
 					perror("send");
 				}
                 close(new_fd);    
-                exit(1);				
+                exit(0);				
 			}
 			//printf("%s",correct_sig);
 			//if file exists, send correct header
 			if (send(new_fd, correct_sig, strlen(correct_sig), 0) == -1){
                 perror("send");
                 close(new_fd);
-                exit(1);
+                exit(0);
             }
 
             //keep reading from file until no bits left
@@ -174,7 +174,7 @@ int main(void)
 					if (send(new_fd, readbuf, bytescount, 0) == -1) {
 						close(new_fd);
 						perror("send");
-						exit(1);
+						exit(0);
 					}	
 					memset(readbuf, 0, FN_LENGTH);
 				}
