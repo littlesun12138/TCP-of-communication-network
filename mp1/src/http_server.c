@@ -143,7 +143,7 @@ int main(void)
                 close(new_fd);
                 exit(1);
 			}	
-			strncpy(file_name, http_request+4, str_end-http_request-4);
+			strncpy(file_name, http_request+5, str_end-http_request-5);
 			printf("%s\n",file_name);
 			FILE *fp = fopen(file_name, "rb");
 
