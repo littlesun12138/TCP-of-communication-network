@@ -27,7 +27,8 @@
 #include <deque>
 
 using std::deque;
-#define MSS 2048
+// #define MSS 2048
+#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
 #define MAX_CW 64
@@ -100,6 +101,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     }    
     int i=0;
     while(feof(fp)==0 ){
+        printf("3\n");
         pack_struct* pack=new pack_struct;
         memset((char*)pack, 0, sizeof(*pack));
         int pck_size = fread(pack->arr, sizeof(char), MSS, fp);
@@ -115,7 +117,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
         pkt_q.push_back(pack); //add it into the queue
         arr[i]=pack;
         i=i+1;
-        if(bytes_count<bytesToTransfer){
+        if(bytes_count>=bytesToTransfer){
             break;
         }
     }

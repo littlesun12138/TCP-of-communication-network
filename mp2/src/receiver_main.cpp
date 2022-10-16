@@ -16,7 +16,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netdb.h>
-#define MSS 2048
+// #define MSS 2048
+#define MSS 10
 #define BUFFSIZE 4096
 
 
@@ -103,7 +104,7 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
         }
 
 
-        
+
         old_pid=pid;
         ack_array[pid-1]=1;
         pck_array[pid-1]=packet;
