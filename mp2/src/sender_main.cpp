@@ -27,8 +27,8 @@
 #include <deque>
 
 using std::deque;
-// #define MSS 2048
-#define MSS 10
+#define MSS 2048
+//#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
 #define MAX_CW 64

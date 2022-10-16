@@ -16,9 +16,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netdb.h>
-// #define MSS 2048
-#define MSS 10
-#define BUFFSIZE 4096
+#define MSS 2048
+//#define MSS 10
+//#define BUFFSIZE 4096
 
 
 typedef struct{
@@ -47,7 +47,7 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
 
     slen = sizeof (si_other);
     int bytes;
-    char buffer[BUFFSIZE];
+    char buffer[sizeof(pack_struct)];
     zero_pid=0;
     old_pid=0;
     if ((s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
@@ -77,7 +77,7 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
 
     while(1){
         printf("1\n");
-        if ((bytes = recvfrom(s, buffer, BUFFSIZE, 0,(struct sockaddr *)&si_other, &slen)) == -1) {
+        if ((bytes = recvfrom(s, buffer, sizeof(pack_struct), 0,(struct sockaddr *)&si_other, &slen)) == -1) {
             diep((char*)"recvfrom error");
         }
 
