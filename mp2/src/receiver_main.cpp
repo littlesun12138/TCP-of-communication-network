@@ -68,8 +68,8 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
     if(fp==NULL){
         diep((char*)"can't open file");
     }
-    int ack_array[500];
-    pack_struct* pck_array[500];
+    int ack_array[5000000];
+    pack_struct* pck_array[5000000];
     for (int i=0;i<500;i++){
         ack_array[i]=0;
         pck_array[i]=nullptr;
@@ -113,7 +113,7 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
         //     perror("send error");
         // }
         int count=0;
-        for(int i=old_pid-1;i<500;i++){
+        for(int i=old_pid-1;i<5000000;i++){
             if(ack_array[i]==1){
                 count++;
             }
