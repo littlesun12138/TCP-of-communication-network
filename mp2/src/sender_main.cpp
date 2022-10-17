@@ -196,7 +196,7 @@ void sender(){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=1;
+    cwindow->window_size=400;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -274,7 +274,7 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            cwindow->window_size=1;
+            //cwindow->window_size=1;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
             return;
@@ -323,28 +323,28 @@ void wait(){
             state=0;
         }
 
-        int window_position = ack_struct-cwindow->head_id;
-        if(cwindow->window_size-1==window_position){
-            if(window_mode==0){
-                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-                if (2*cwindow->window_size <= SLOWSTART_CW){
-                    cwindow->window_size=cwindow->window_size*2;
-                }
-                else if(cwindow->window_size<SLOWSTART_CW){
-                    //fast recovery
-                    cwindow->window_size = SLOWSTART_CW;
-                }
-                else{
-                    cwindow->window_size=cwindow->window_size+1;
-                }
+        // int window_position = ack_struct-cwindow->head_id;
+        // if(cwindow->window_size-1==window_position){
+        //     if(window_mode==0){
+        //         cwindow->head_id = cwindow->head_id + cwindow->window_size ;
+        //         if (2*cwindow->window_size <= SLOWSTART_CW){
+        //             cwindow->window_size=cwindow->window_size*2;
+        //         }
+        //         else if(cwindow->window_size<SLOWSTART_CW){
+        //             //fast recovery
+        //             cwindow->window_size = SLOWSTART_CW;
+        //         }
+        //         else{
+        //             cwindow->window_size=cwindow->window_size+1;
+        //         }
 
-            }
-            else{
-                // all packages in window are ack
-                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-                cwindow->window_size=cwindow->window_size+1;
-            }
-        }
+        //     }
+        //     else{
+        //         // all packages in window are ack
+        //         cwindow->head_id = cwindow->head_id + cwindow->window_size ;
+        //         cwindow->window_size=cwindow->window_size+1;
+        //     }
+        // }
 
     }
     else{
