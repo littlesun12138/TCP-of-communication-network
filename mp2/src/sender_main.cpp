@@ -27,7 +27,7 @@
 #include <deque>
 
 using std::deque;
-#define MSS 2048
+#define MSS 4000
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
@@ -266,7 +266,8 @@ void wait(){
     if(numbytes==-1){
         state = 1;
         if(errno==EAGAIN){
-            SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
+            
+            //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
             cwindow->window_size=1;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
@@ -331,7 +332,7 @@ void wait(){
             }
             else{
                 // all packages in window are ack
-                cwindow->head_id = cwindow->head_id + cwindow->head_id ;
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
                 cwindow->window_size=cwindow->window_size+1;
             }
         }

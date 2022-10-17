@@ -17,7 +17,7 @@
 #include <pthread.h>
 #include <netdb.h>
 #include <unordered_map>
-#define MSS 2048
+#define MSS 4000
 //#define MSS 10
 //#define BUFFSIZE 4096
 
