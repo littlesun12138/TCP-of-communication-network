@@ -101,7 +101,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     }    
     int i=0;
     while(feof(fp)==0 ){
-        printf("3\n");
+        //printf("3\n");
         pack_struct* pack=new pack_struct;
         memset((char*)pack, 0, sizeof(*pack));
         int pck_size = fread(pack->arr, sizeof(char), MSS, fp);
@@ -198,6 +198,7 @@ void sender(pack_struct* arr[]){
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
+        printf("%d\n",state);
         switch(state){
             case 0:
                 send_new(arr);
@@ -207,6 +208,7 @@ void sender(pack_struct* arr[]){
                 break;
             case 2:
                 wait();
+                printf("win%d\n",cwindow->window_size);
                 break;
 
         }
@@ -254,7 +256,7 @@ void wait(){
     int k;
     int ack_struct;
     tv_out.tv_sec = 0;
-    tv_out.tv_usec = 20 * 1000;
+    tv_out.tv_usec = 25 * 1000;
     //set time out mode
     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
     if(k == -1){
@@ -263,7 +265,7 @@ void wait(){
     //int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0,NULL, NULL);
     int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0, (struct sockaddr *)&si_other, &slen);
     //recieve nothing case
-    if(numbytes==-1){
+    if(numbytes<0){
         state = 1;
         if(errno==EAGAIN){
             
@@ -285,9 +287,12 @@ void wait(){
         last_ack_num=last_ack_num+1;
         //dupack condition
         if(last_ack_num==3){ 
-            cwindow->window_size=cwindow->window_size/2;
+            //for speed
+            //cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
-            window_mode=1;            
+            //window_mode=1;   
+            state=1;         
+            return;
         }
     }
     else{
