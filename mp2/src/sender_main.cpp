@@ -69,8 +69,10 @@ void diep(char *s) {
 }
 
 //void dividepacket(char* filename, unsigned long long int bytesToTransfer);
-void sender(pack_struct* arr[]);
-void send_new(pack_struct* arr[]);
+//void sender(pack_struct* arr[]);
+//void send_new(pack_struct* arr[]);
+void sender();
+void send_new();
 void timeout();
 void wait();
 // void sender(FILE *fp, unsigned long long bytesToTransfer, int socket, struct addrinfo *receiver);
@@ -92,7 +94,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     int package_id=1;
 
     pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
-    pack_struct* arr[pack_num];
+    //pack_struct* arr[pack_num];
     FILE *fp;
     fp = fopen(filename, "rb");
     if (fp == NULL) {
@@ -115,7 +117,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
         pack->length=pck_size; 
         // pack->type=2; //type is data
         pkt_q.push_back(pack); //add it into the queue
-        arr[i]=pack;
+        //arr[i]=pack;
         i=i+1;
         if(bytes_count>=bytesToTransfer){
             break;
@@ -143,7 +145,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     // clock_t startTime = clock(); 
 
 	/* Send data and receive acknowledgements on s*/
-    sender(arr);
+    sender();
     pack_struct* fin = new pack_struct;
     fin->pack_id = 0;
     fin->length = 0;
@@ -186,7 +188,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
 
 // }
 
-void sender(pack_struct* arr[]){
+void sender(){
 
     //int pack_num= ceil(bytesToTransfer * 1.0 / MSS);
     cur_pack=1;
@@ -198,17 +200,17 @@ void sender(pack_struct* arr[]){
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
-        printf("%d\n",state);
+        //printf("%d\n",state);
         switch(state){
             case 0:
-                send_new(arr);
+                send_new();
                 break;
             case 1:
                 timeout();
                 break;
             case 2:
                 wait();
-                printf("win%d\n",cwindow->window_size);
+                //printf("win%d\n",cwindow->window_size);
                 break;
 
         }
@@ -219,7 +221,7 @@ void sender(pack_struct* arr[]){
     }
 }
 
-void send_new(pack_struct* arr[]){
+void send_new(){
     int have_send_num = pkt_q_copy.size();
     int current=cur_pack;
     // no pakage left
@@ -236,11 +238,13 @@ void send_new(pack_struct* arr[]){
             return;
 
         }  
-        if (sendto(s, arr[i-1], sizeof(pack_struct), 0, (struct sockaddr *)&si_other, sizeof(si_other)) < 0) {
+
+        if (sendto(s, pkt_q.front(), sizeof(pack_struct), 0, (struct sockaddr *)&si_other, sizeof(si_other)) < 0) {
 	        perror("send_error");
         }
+        pkt_q_copy.push_back(pkt_q.front());
         pkt_q.pop_front();
-        pkt_q_copy.push_back(arr[i-1]);
+        
         cur_pack=cur_pack+1;
     }
     state=2;//go to wait
