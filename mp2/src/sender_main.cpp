@@ -326,7 +326,7 @@ void wait(){
         int window_position = ack_struct-cwindow->head_id;
         if(cwindow->window_size-1==window_position){
             if(window_mode==0){
-                cwindow->head_id = cwindow->head_id + cwindow->head_id ;
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
                 if (2*cwindow->window_size <= SLOWSTART_CW){
                     cwindow->window_size=cwindow->window_size*2;
                 }
