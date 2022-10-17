@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netdb.h>
+#include <unordered_map>
 #define MSS 2048
 //#define MSS 10
 //#define BUFFSIZE 4096
@@ -68,12 +69,13 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
     if(fp==NULL){
         diep((char*)"can't open file");
     }
-    int ack_array[5000000];
-    pack_struct* pck_array[5000000];
-    for (int i=0;i<500;i++){
-        ack_array[i]=0;
-        pck_array[i]=nullptr;
-    }
+    // int ack_array[5000000];
+    // pack_struct* pck_array[5000000];
+    std::unordered_map<int, pack_struct*> array;
+    // for (int i=0;i<5000000;i++){
+    //     ack_array[i]=0;
+    //     pck_array[i]=nullptr;
+    // }
 
     while(1){
         printf("1\n");
@@ -92,10 +94,13 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
 
 
         if(pid!=old_pid+1){
-            if(ack_array[pid-1]==0){
-                ack_array[pid-1]=1;
-                pck_array[pid-1]=packet;
+            if(array.count(pid)==0){
+                array.insert({pid,packet});
             }
+            // if(ack_array[pid-1]==0){
+            //     ack_array[pid-1]=1;
+            //     pck_array[pid-1]=packet;
+            // }
             //send old ack information
             if(sendto(s, &old_pid, sizeof(old_pid), 0, (struct sockaddr *)&si_other, slen) == -1){
                 perror("send_error1");
@@ -103,23 +108,23 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
             continue;
         }
 
-
-
+        //window head is coming
+        array.insert({pid,packet});
         old_pid=pid;
-        ack_array[pid-1]=1;
-        pck_array[pid-1]=packet;
+        // ack_array[pid-1]=1;
+        // pck_array[pid-1]=packet;
         //problem
         // if(sendto(s, &old_pid, sizeof(old_pid), 0, (struct sockaddr *)&aaddr, alen) == -1){
         //     perror("send error");
         // }
         int count=0;
-        for(int i=old_pid-1;i<5000000;i++){
-            if(ack_array[i]==1){
-                count++;
-            }
-            else{
+        int temid=pid;
+        while(1){
+            if(array.count(temid)==0){
                 break;
             }
+            count++;
+            temid++;
         }
         pid=old_pid+count-1;
         //change ack and send
@@ -128,10 +133,10 @@ void reliablyReceive(unsigned short int myUDPport, char* destinationFile) {
             printf("2\n");
             perror("send error2");
         }        
-        for(int i=old_pid-1;i<old_pid-1+count;i++){
+        for(int i=old_pid;i<old_pid+count;i++){
 
-            size_t bit = fwrite(pck_array[i]->arr,sizeof(char),pck_array[i]->length,fp);
-            if(bit!=pck_array[i]->length){
+            size_t bit = fwrite(array[i]->arr,sizeof(char),array[i]->length,fp);
+            if(bit!=array[i]->length){
                 diep((char*)"fwrite error");
             }
         }
