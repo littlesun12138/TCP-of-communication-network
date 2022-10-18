@@ -31,7 +31,7 @@ using std::deque;
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
-#define MAX_CW 64
+#define MAX_CW 130
 
 
 struct timeval tv_out;
