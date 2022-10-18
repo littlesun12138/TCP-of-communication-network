@@ -272,6 +272,7 @@ void timeout(){
     
     state=2;//go to wait    
 }
+
 void wait(){
     int k;
     int ack_struct;
@@ -290,7 +291,7 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            cwindow->window_size=cwindow->window_size/2;
+            cwindow->window_size=1;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
             return;
@@ -300,7 +301,6 @@ void wait(){
             diep((char*)"EAGAIN");
         }
     }
-    //congestion avoidance
 
 
     //check ack content
@@ -309,94 +309,198 @@ void wait(){
         //dupack condition
         if(last_ack_num==3){ 
             //for speed
-            cwindow->window_size=SLOWSTART_CW;
+            //cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
-            window_mode=1;   
+            //window_mode=1;   
             state=1;         
             return;
         }
-        cwindow->window_size=cwindow->window_size+1;
     }
-
-    //new ack comes
-    else if(ack_struct>last_ack){
+    else{
         last_ack=ack_struct;
         last_ack_num=1; //update new ack
-        if(window_mode==0){
-            cwindow->window_size = (cwindow->window_size+1.0 >= 200) ? 199 : cwindow->window_size+1.0;
-            //cwindow->window_size+=1.0;
-        }
-        else{
-            cwindow->window_size = (cwindow->window_size+1.0/cwindow->window_size >= 200) ? 199 : cwindow->window_size+1.0/cwindow->window_size;
-            //cwindow->window_size= cwindow->window_size+ 1.0/ cwindow->window_size;
-        }        
     }
     
-    if(cwindow->window_size>SLOWSTART_CW){
-        window_mode=1;
-    }
+
 
     if(pkt_q_copy.front()->pack_id > ack_struct){
         state=2; //
     }
 
-    //window head found
-    else if(pkt_q_copy.front()->pack_id <= ack_struct){
-        //printf("2\n");
-        for(int j=0;j<=ack_struct-cwindow->head_id;j++){
-            pkt_q_copy.pop_front();
-        }
-        //printf("2\n");
-        //pkt_q_copy.pop_front();
+    //window
+    else if(pkt_q_copy.front()->pack_id == ack_struct){
+        pkt_q_copy.pop_front();
         if(pkt_q.empty()==1 && read_all_flag==1){//no more window shift
             if(pkt_q_copy.empty()==1){
                 //all ack
                 ack_all_flag=1; //all end
             }
-            return;
         }
         else{//set to send more mode because window should shift
             state=0;
         }
-        //printf("2\n");
-        //int window_position = ack_struct-cwindow->head_id;
-        //window is full,then shift window
-        cwindow->head_id = ack_struct+1;
-        if(window_mode==0){
-            printf("2\n");
-            
-            //cwindow->head_id + cwindow->window_size ;
-            if (2*cwindow->window_size <= SLOWSTART_CW){
-                cwindow->window_size=cwindow->window_size*2;
-            }
-            else if(cwindow->window_size<SLOWSTART_CW){
-                //fast recovery
-                cwindow->window_size = SLOWSTART_CW;
+
+        int window_position = ack_struct-cwindow->head_id;
+        if(cwindow->window_size-1==window_position){
+            if(window_mode==0){
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
+                if (2*cwindow->window_size <= SLOWSTART_CW){
+                    cwindow->window_size=cwindow->window_size*2;
+                }
+                else if(cwindow->window_size<SLOWSTART_CW){
+                    //fast recovery
+                    cwindow->window_size = SLOWSTART_CW;
+                }
+                else{
+                    cwindow->window_size=cwindow->window_size+1;
+                }
+
             }
             else{
+                // all packages in window are ack
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
                 cwindow->window_size=cwindow->window_size+1;
             }
-
         }
-        
-        //window mode 1
-        // else{
-        //     // all packages in window are ack
-        //     cwindow->head_id =ack_struct+1;
-        //     cwindow->window_size=cwindow->window_size+1;
-        // }
+
+    }
+    else{
+        for(int j=0;j<ack_struct-cwindow->head_id;j++){
+            pkt_q_copy.pop_front();
+        }
+        //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
+        //state=1; //just resend 
     }
 
 
-    // else{
-    //     for(int j=0;j<ack_struct-pkt_q_copy.front()->pack_id;j++){
-    //         pkt_q_copy.pop_front();
-    //     }
-
-    //     //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
-    //     //state=1; //just resend 
-    // }
 }
+
+
+// void wait(){
+//     int k;
+//     int ack_struct;
+//     tv_out.tv_sec = 0;
+//     tv_out.tv_usec = 25 * 1000;
+//     //set time out mode
+//     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
+//     if(k == -1){
+//         diep((char*)"setsockopt_error");
+//     }
+//     //int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0,NULL, NULL);
+//     int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0, (struct sockaddr *)&si_other, &slen);
+//     //recieve nothing case
+//     if(numbytes<0){
+//         state = 1;
+//         if(errno==EAGAIN){
+            
+//             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
+//             cwindow->window_size=cwindow->window_size/2;
+//             cwindow->head_id=pkt_q_copy.front()->pack_id;
+//             window_mode=0;
+//             return;
+
+//         }
+//         else{
+//             diep((char*)"EAGAIN");
+//         }
+//     }
+//     //congestion avoidance
+
+
+//     //check ack content
+//     if(ack_struct==last_ack){
+//         last_ack_num=last_ack_num+1;
+//         //dupack condition
+//         if(last_ack_num==3){ 
+//             //for speed
+//             cwindow->window_size=SLOWSTART_CW;
+//             cwindow->head_id=pkt_q_copy.front()->pack_id;
+//             window_mode=1;   
+//             state=1;         
+//             return;
+//         }
+//         cwindow->window_size=cwindow->window_size+1;
+//     }
+
+//     //new ack comes
+//     else if(ack_struct>last_ack){
+//         last_ack=ack_struct;
+//         last_ack_num=1; //update new ack
+//         if(window_mode==0){
+//             cwindow->window_size = (cwindow->window_size+1.0 >= 200) ? 199 : cwindow->window_size+1.0;
+//             //cwindow->window_size+=1.0;
+//         }
+//         else{
+//             cwindow->window_size = (cwindow->window_size+1.0/cwindow->window_size >= 200) ? 199 : cwindow->window_size+1.0/cwindow->window_size;
+//             //cwindow->window_size= cwindow->window_size+ 1.0/ cwindow->window_size;
+//         }        
+//     }
+    
+//     if(cwindow->window_size>SLOWSTART_CW){
+//         window_mode=1;
+//     }
+
+//     if(pkt_q_copy.front()->pack_id > ack_struct){
+//         state=2; //
+//     }
+
+//     //window head found
+//     else if(pkt_q_copy.front()->pack_id <= ack_struct){
+//         //printf("2\n");
+//         for(int j=0;j<=ack_struct-cwindow->head_id;j++){
+//             pkt_q_copy.pop_front();
+//         }
+//         //printf("2\n");
+//         //pkt_q_copy.pop_front();
+//         if(pkt_q.empty()==1 && read_all_flag==1){//no more window shift
+//             if(pkt_q_copy.empty()==1){
+//                 //all ack
+//                 ack_all_flag=1; //all end
+//             }
+//             return;
+//         }
+//         else{//set to send more mode because window should shift
+//             state=0;
+//         }
+//         //printf("2\n");
+//         //int window_position = ack_struct-cwindow->head_id;
+//         //window is full,then shift window
+//         cwindow->head_id = ack_struct+1;
+//         if(window_mode==0){
+//             printf("2\n");
+            
+//             //cwindow->head_id + cwindow->window_size ;
+//             if (2*cwindow->window_size <= SLOWSTART_CW){
+//                 cwindow->window_size=cwindow->window_size*2;
+//             }
+//             else if(cwindow->window_size<SLOWSTART_CW){
+//                 //fast recovery
+//                 cwindow->window_size = SLOWSTART_CW;
+//             }
+//             else{
+//                 cwindow->window_size=cwindow->window_size+1;
+//             }
+
+//         }
+        
+//         //window mode 1
+//         // else{
+//         //     // all packages in window are ack
+//         //     cwindow->head_id =ack_struct+1;
+//         //     cwindow->window_size=cwindow->window_size+1;
+//         // }
+//     }
+
+
+//     // else{
+//     //     for(int j=0;j<ack_struct-pkt_q_copy.front()->pack_id;j++){
+//     //         pkt_q_copy.pop_front();
+//     //     }
+
+//     //     //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
+//     //     //state=1; //just resend 
+//     // }
+// }
 
 
 
