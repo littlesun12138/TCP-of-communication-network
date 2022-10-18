@@ -276,7 +276,7 @@ void wait(){
     int k;
     int ack_struct;
     tv_out.tv_sec = 0;
-    tv_out.tv_usec = 30 * 1000;
+    tv_out.tv_usec = 25 * 1000;
     //set time out mode
     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
     if(k == -1){
@@ -301,15 +301,8 @@ void wait(){
         }
     }
     //congestion avoidance
-    if(cwindow->window_size>SLOWSTART_CW){
-        window_mode=1;
-    }
-    if(window_mode==0){
-        cwindow->window_size+=1.0;
-    }
-    else{
-        cwindow->window_size= cwindow->window_size+ 1.0/ cwindow->window_size;
-    }
+
+
     //check ack content
     if(ack_struct==last_ack){
         last_ack_num=last_ack_num+1;
@@ -318,18 +311,30 @@ void wait(){
             //for speed
             cwindow->window_size=SLOWSTART_CW;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
-            //window_mode=1;   
+            window_mode=1;   
             state=1;         
             return;
         }
         cwindow->window_size=cwindow->window_size+1;
     }
+
+    //new ack comes
     else if(ack_struct>last_ack){
         last_ack=ack_struct;
         last_ack_num=1; //update new ack
+        if(window_mode==0){
+            cwindow->window_size = (cwindow->window_size+1.0 >= 200) ? 199 : cwindow->window_size+1.0;
+            //cwindow->window_size+=1.0;
+        }
+        else{
+            cwindow->window_size = (cwindow->window_size+1.0/cwindow->window_size >= 200) ? 199 : cwindow->window_size+1.0/cwindow->window_size;
+            //cwindow->window_size= cwindow->window_size+ 1.0/ cwindow->window_size;
+        }        
     }
     
-
+    if(cwindow->window_size>SLOWSTART_CW){
+        window_mode=1;
+    }
 
     if(pkt_q_copy.front()->pack_id > ack_struct){
         state=2; //
