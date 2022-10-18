@@ -209,7 +209,7 @@ void sender(FILE *fp){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=4.0;
+    cwindow->window_size=10.0;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -291,7 +291,7 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            cwindow->window_size=1;
+            cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
             return;
