@@ -92,7 +92,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     //pack_num= ceil(bytesToTransfer * 1.0 / MSS);
     
     // dividepacket(filename,bytesToTransfer);
-    int pack_num;
+    //int pack_num;
     //unsigned long long int bytes_count=0;
 
     
@@ -209,7 +209,7 @@ void sender(FILE *fp){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=1;
+    cwindow->window_size=10;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -334,11 +334,13 @@ void wait(){
 
     //window head found
     else if(pkt_q_copy.front()->pack_id <= ack_struct){
-        for(int j=0;j<=ack_struct-pkt_q_copy.front()->pack_id;j++){
+        //printf("2\n");
+        for(int j=0;j<=ack_struct-cwindow->head_id;j++){
             pkt_q_copy.pop_front();
         }
+        //printf("2\n");
         //pkt_q_copy.pop_front();
-        if(pkt_q.empty()==1&&read_all_flag==1){//no more window shift
+        if(pkt_q.empty()==1 && read_all_flag==1){//no more window shift
             if(pkt_q_copy.empty()==1){
                 //all ack
                 ack_all_flag=1; //all end
@@ -347,11 +349,12 @@ void wait(){
         else{//set to send more mode because window should shift
             state=0;
         }
-
-        int window_position = ack_struct-cwindow->head_id;
+        //printf("2\n");
+        //int window_position = ack_struct-cwindow->head_id;
         //window is full,then shift window
 
         if(window_mode==0){
+            printf("2\n");
             cwindow->head_id = ack_struct+1;
             //cwindow->head_id + cwindow->window_size ;
             if (2*cwindow->window_size <= SLOWSTART_CW){
@@ -366,16 +369,19 @@ void wait(){
             }
 
         }
+        
         //window mode 1
         else{
             // all packages in window are ack
             cwindow->head_id =ack_struct+1;
             cwindow->window_size=cwindow->window_size+1;
         }
-        
+
 
 
     }
+
+
     // else{
     //     for(int j=0;j<ack_struct-pkt_q_copy.front()->pack_id;j++){
     //         pkt_q_copy.pop_front();
