@@ -43,7 +43,7 @@ typedef struct{
 }pack_struct;
 
 typedef struct{
-    int 	window_size;
+    double 	window_size;
     int head_id;
 }window_struct;
 
@@ -209,7 +209,7 @@ void sender(FILE *fp){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=10;
+    cwindow->window_size=10.0;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -247,7 +247,7 @@ void send_new(FILE *fp){
 
     }    
     
-    for (int i=0; i<cwindow->window_size-have_send_num;i++){
+    for (int i=0; i<int(cwindow->window_size)-have_send_num;i++){
         //start send package one by one
         if (pkt_q.empty()==1){
             state=2;//go to wait for all ack
@@ -276,7 +276,7 @@ void wait(){
     int k;
     int ack_struct;
     tv_out.tv_sec = 0;
-    tv_out.tv_usec = 25 * 1000;
+    tv_out.tv_usec = 30 * 1000;
     //set time out mode
     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
     if(k == -1){
@@ -301,25 +301,28 @@ void wait(){
         }
     }
     //congestion avoidance
-    if(cwindow->window_size>64){
+    if(cwindow->window_size>SLOWSTART_CW){
         window_mode=1;
     }
     if(window_mode==0){
-        cwindow->window_size+=1;
+        cwindow->window_size+=1.0;
     }
-
+    else{
+        cwindow->window_size= cwindow->window_size+ 1.0/ cwindow->window_size;
+    }
     //check ack content
     if(ack_struct==last_ack){
         last_ack_num=last_ack_num+1;
         //dupack condition
         if(last_ack_num==3){ 
             //for speed
-            //cwindow->window_size=cwindow->window_size/2;
+            cwindow->window_size=SLOWSTART_CW;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             //window_mode=1;   
             state=1;         
             return;
         }
+        cwindow->window_size=cwindow->window_size+1;
     }
     else if(ack_struct>last_ack){
         last_ack=ack_struct;
@@ -345,6 +348,7 @@ void wait(){
                 //all ack
                 ack_all_flag=1; //all end
             }
+            return;
         }
         else{//set to send more mode because window should shift
             state=0;
@@ -352,10 +356,10 @@ void wait(){
         //printf("2\n");
         //int window_position = ack_struct-cwindow->head_id;
         //window is full,then shift window
-
+        cwindow->head_id = ack_struct+1;
         if(window_mode==0){
             printf("2\n");
-            cwindow->head_id = ack_struct+1;
+            
             //cwindow->head_id + cwindow->window_size ;
             if (2*cwindow->window_size <= SLOWSTART_CW){
                 cwindow->window_size=cwindow->window_size*2;
@@ -371,14 +375,11 @@ void wait(){
         }
         
         //window mode 1
-        else{
-            // all packages in window are ack
-            cwindow->head_id =ack_struct+1;
-            cwindow->window_size=cwindow->window_size+1;
-        }
-
-
-
+        // else{
+        //     // all packages in window are ack
+        //     cwindow->head_id =ack_struct+1;
+        //     cwindow->window_size=cwindow->window_size+1;
+        // }
     }
 
 
@@ -390,8 +391,6 @@ void wait(){
     //     //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
     //     //state=1; //just resend 
     // }
-
-
 }
 
 
