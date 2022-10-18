@@ -290,7 +290,7 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            cwindow->window_size=1;
+            cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
             return;
@@ -300,7 +300,13 @@ void wait(){
             diep((char*)"EAGAIN");
         }
     }
-
+    //congestion avoidance
+    if(cwindow->window_size>64){
+        window_mode=1;
+    }
+    if(window_mode==0){
+        cwindow->window_size+=1;
+    }
 
     //check ack content
     if(ack_struct==last_ack){
@@ -315,7 +321,7 @@ void wait(){
             return;
         }
     }
-    else{
+    else if(ack_struct>last_ack){
         last_ack=ack_struct;
         last_ack_num=1; //update new ack
     }
@@ -326,7 +332,7 @@ void wait(){
         state=2; //
     }
 
-    //window
+    //window head found
     else if(pkt_q_copy.front()->pack_id == ack_struct){
         pkt_q_copy.pop_front();
         if(pkt_q.empty()==1){//no more window shift
@@ -358,14 +364,17 @@ void wait(){
             else{
                 // all packages in window are ack
                 cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-                cwindow->window_size=cwindow->window_size+1;
+                cwindow->window_size=cwindow->window_size*2;
             }
         }
 
     }
     else{
+        for(int j=0;j<ack_struct-pkt_q_copy.front()->pack_id;j++){
+            pkt_q_copy.pop_front();
+        }
         //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
-        state=1; //just resend 
+        //state=1; //just resend 
     }
 
 
