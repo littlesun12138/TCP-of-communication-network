@@ -53,6 +53,7 @@ char buffer[sizeof(pack_struct)];
 deque<pack_struct*> pkt_q;
 deque<pack_struct*> pkt_q_copy;
 int cur_pack;
+unsigned long long int bytes_count;
 
 int SLOWSTART_CW=MAX_CW;
 
@@ -63,16 +64,18 @@ int window_mode=0; //0 means slow start, 1 means congestion avoidance
 int last_ack=0;
 int last_ack_num=0;
 int ack_all_flag=0;
+int read_all_flag;
+int package_id;
 void diep(char *s) {
     perror(s);
     exit(1);
 }
 
-//void dividepacket(char* filename, unsigned long long int bytesToTransfer);
+void dividepacket(FILE *fp);
 //void sender(pack_struct* arr[]);
 //void send_new(pack_struct* arr[]);
-void sender();
-void send_new();
+void sender(FILE *fp);
+void send_new(FILE *fp);
 void timeout();
 void wait();
 // void sender(FILE *fp, unsigned long long bytesToTransfer, int socket, struct addrinfo *receiver);
@@ -90,40 +93,45 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     
     // dividepacket(filename,bytesToTransfer);
     int pack_num;
-    unsigned long long int bytes_count=0;
-    int package_id=1;
+    //unsigned long long int bytes_count=0;
 
-    pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
+    
+    bytes_count=bytesToTransfer;
     //pack_struct* arr[pack_num];
+    read_all_flag=0;
+    package_id=1;
     FILE *fp;
     fp = fopen(filename, "rb");
     if (fp == NULL) {
         printf("Could not open file to send.");
         exit(1);
     }    
-    int i=0;
-    while(feof(fp)==0 ){
-        //printf("3\n");
-        pack_struct* pack=new pack_struct;
-        memset((char*)pack, 0, sizeof(*pack));
-        int pck_size = fread(pack->arr, sizeof(char), MSS, fp);
-        if(pck_size<=0){
-            printf("finish reading");
-            break;
-        }
-        pack->pack_id=package_id;
-        package_id+=1;
-        bytes_count+=pck_size;
-        pack->length=pck_size; 
-        // pack->type=2; //type is data
-        pkt_q.push_back(pack); //add it into the queue
-        //arr[i]=pack;
-        i=i+1;
-        if(bytes_count>=bytesToTransfer){
-            break;
-        }
-    }
-   fclose(fp);
+
+    dividepacket(fp);
+
+//     int i=0;
+//     while(feof(fp)==0 ){
+//         //printf("3\n");
+//         pack_struct* pack=new pack_struct;
+//         memset((char*)pack, 0, sizeof(*pack));
+//         int pck_size = fread(pack->arr, sizeof(char), MSS, fp);
+//         if(pck_size<=0){
+//             printf("finish reading");
+//             break;
+//         }
+//         pack->pack_id=package_id;
+//         package_id+=1;
+//         bytes_count+=pck_size;
+//         pack->length=pck_size; 
+//         // pack->type=2; //type is data
+//         pkt_q.push_back(pack); //add it into the queue
+//         //arr[i]=pack;
+//         i=i+1;
+//         if(bytes_count>=bytesToTransfer){
+//             break;
+//         }
+//     }
+//    fclose(fp);
 
 
 
@@ -145,7 +153,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     // clock_t startTime = clock(); 
 
 	/* Send data and receive acknowledgements on s*/
-    sender();
+    sender(fp);
     pack_struct* fin = new pack_struct;
     fin->pack_id = 0;
     fin->length = 0;
@@ -154,41 +162,46 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
     }
     //freeaddrinfo(servinfo);
     printf("Closing the socket\n");
+    fclose(fp);
     close(s);
  
     return;
 
 }
 
-// void dividepacket(char* filename, unsigned long long int bytesToTransfer){
-//     int pack_num;
-//     unsigned long long int bytes_count=0;
-//     int package_id=0;
-//     pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
-//     FILE *fp;
-//     fp = fopen(filename, "rb");
-//     if (fp == NULL) {
-//         printf("Could not open file to send.");
-//         exit(1);
-//     }    
-//     while(feof(fp)==0 ){
-//         pack_struct* pack=new pack_struct;
-//         memset((char*)pack, 0, sizeof(*pack));
-//         int pck_size = fread(pack->arr, sizeof(char), MSS, fp);
-//         pack->pack_id=package_id;
-//         package_id+=1;
-//         bytes_count+=pck_size;
-//         pack->length=pck_size; 
-//         // pack->type=2; //type is data
-//         pkt_q.push_back(pack); //add it into the queue
-//         if(bytes_count<bytesToTransfer){
-//             break;
-//         }
-//     }
+void dividepacket(FILE* fp){
+    int pack_num=300;
+    //unsigned long long int bytes_count=0;
+    //int package_id=0;
+    //pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
+    
+    while(bytes_count>0 ){
+        if(pack_num==0){
+            break;//already 300 packages load,send first
+        }
+        int pck_size = bytes_count < MSS ? bytes_count : MSS;
+        pack_struct* pack=new pack_struct;
+        memset((char*)pack, 0, sizeof(*pack));
+        int i = fread(pack->arr, sizeof(char), MSS, fp);
+        if(i>0){
+            pack->pack_id=package_id;
+            package_id+=1;
+            bytes_count-=pck_size;
+            pack->length=pck_size;      
+            pkt_q.push_back(pack); //add it into the queue      
+        }
+        // pack->type=2; //type is data
+        pack_num=pack_num-1;
+        // if(bytes_count<bytes_count){
+        //     break;
+        // }
+    }
+    if(bytes_count==0){
+        read_all_flag=1;
+    }
+}
 
-// }
-
-void sender(){
+void sender(FILE *fp){
 
     //int pack_num= ceil(bytesToTransfer * 1.0 / MSS);
     cur_pack=1;
@@ -196,14 +209,14 @@ void sender(){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=400;
+    cwindow->window_size=1;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
         //printf("%d\n",state);
         switch(state){
             case 0:
-                send_new();
+                send_new(fp);
                 break;
             case 1:
                 timeout();
@@ -221,17 +234,20 @@ void sender(){
     }
 }
 
-void send_new(){
+void send_new(FILE *fp){
     int have_send_num = pkt_q_copy.size();
-    int current=cur_pack;
+    //int current=cur_pack;
     // no pakage left
     if (pkt_q.empty()==1){
-        state=2;//go to wait for all ack
-        return;
+        if(read_all_flag==1){
+            state=2;//go to wait for all ack
+            return;            
+        }
+        dividepacket(fp);
 
     }    
     
-    for (int i=current; i<current+cwindow->window_size-have_send_num;i++){
+    for (int i=0; i<cwindow->window_size-have_send_num;i++){
         //start send package one by one
         if (pkt_q.empty()==1){
             state=2;//go to wait for all ack
@@ -245,7 +261,7 @@ void send_new(){
         pkt_q_copy.push_back(pkt_q.front());
         pkt_q.pop_front();
         
-        cur_pack=cur_pack+1;
+        //cur_pack=cur_pack+1;
     }
     state=2;//go to wait
 }
@@ -274,7 +290,7 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            //cwindow->window_size=1;
+            cwindow->window_size=1;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             window_mode=0;
             return;
@@ -323,28 +339,28 @@ void wait(){
             state=0;
         }
 
-        // int window_position = ack_struct-cwindow->head_id;
-        // if(cwindow->window_size-1==window_position){
-        //     if(window_mode==0){
-        //         cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-        //         if (2*cwindow->window_size <= SLOWSTART_CW){
-        //             cwindow->window_size=cwindow->window_size*2;
-        //         }
-        //         else if(cwindow->window_size<SLOWSTART_CW){
-        //             //fast recovery
-        //             cwindow->window_size = SLOWSTART_CW;
-        //         }
-        //         else{
-        //             cwindow->window_size=cwindow->window_size+1;
-        //         }
+        int window_position = ack_struct-cwindow->head_id;
+        if(cwindow->window_size-1==window_position){
+            if(window_mode==0){
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
+                if (2*cwindow->window_size <= SLOWSTART_CW){
+                    cwindow->window_size=cwindow->window_size*2;
+                }
+                else if(cwindow->window_size<SLOWSTART_CW){
+                    //fast recovery
+                    cwindow->window_size = SLOWSTART_CW;
+                }
+                else{
+                    cwindow->window_size=cwindow->window_size+1;
+                }
 
-        //     }
-        //     else{
-        //         // all packages in window are ack
-        //         cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-        //         cwindow->window_size=cwindow->window_size+1;
-        //     }
-        // }
+            }
+            else{
+                // all packages in window are ack
+                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
+                cwindow->window_size=cwindow->window_size+1;
+            }
+        }
 
     }
     else{
