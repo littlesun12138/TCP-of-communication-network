@@ -31,7 +31,7 @@ using std::deque;
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
-#define MAX_CW 130
+#define MAX_CW 100
 
 
 struct timeval tv_out;
@@ -249,11 +249,11 @@ void send_new(FILE *fp){
     
     for (int i=0; i<int(cwindow->window_size)-have_send_num;i++){
         //start send package one by one
-        // if (pkt_q.empty()==1){
-        //     state=2;//go to wait for all ack
-        //     return;
+        if (pkt_q.empty()==1){
+            state=2;//go to wait for all ack
+            return;
 
-        // }  
+        }  
 
         if (sendto(s, pkt_q.front(), sizeof(pack_struct), 0, (struct sockaddr *)&si_other, sizeof(si_other)) < 0) {
 	        perror("send_error");
