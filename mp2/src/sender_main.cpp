@@ -27,7 +27,7 @@
 #include <deque>
 
 using std::deque;
-#define MSS 2000
+#define MSS 4000
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
@@ -170,7 +170,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
 }
 
 void dividepacket(FILE* fp){
-    int pack_num=300;
+    int pack_num=200;
     //unsigned long long int bytes_count=0;
     //int package_id=0;
     //pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
