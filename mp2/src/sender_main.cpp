@@ -170,7 +170,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
 }
 
 void dividepacket(FILE* fp){
-    int pack_num=400;
+    int pack_num=300;
     //unsigned long long int bytes_count=0;
     //int package_id=0;
     //pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
@@ -182,7 +182,7 @@ void dividepacket(FILE* fp){
         int pck_size = bytes_count < MSS ? bytes_count : MSS;
         pack_struct* pack=new pack_struct;
         memset((char*)pack, 0, sizeof(*pack));
-        int i = fread(pack->arr, sizeof(char), MSS, fp);
+        int i = fread(pack->arr, sizeof(char), pck_size, fp);
         if(i>0){
             pack->pack_id=package_id;
             package_id+=1;
