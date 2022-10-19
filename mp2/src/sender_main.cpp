@@ -27,7 +27,7 @@
 #include <deque>
 
 using std::deque;
-#define MSS 4500
+#define MSS 4000
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
@@ -245,9 +245,15 @@ void send_new(FILE *fp){
         }
         dividepacket(fp);
 
-    }    
-    
-    for (int i=0; i<int(cwindow->window_size)-have_send_num;i++){
+    }   
+    int y; 
+    if(pkt_q.size()<int(cwindow->window_size)-have_send_num){
+        y=pkt_q.size();
+    }
+    else{
+        y=int(cwindow->window_size)-have_send_num;
+    }
+    for (int i=0; i<y;i++){
         //start send package one by one
         if (pkt_q.empty()==1){
             state=2;//go to wait for all ack
