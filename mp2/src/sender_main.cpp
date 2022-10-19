@@ -27,7 +27,7 @@
 #include <deque>
 
 using std::deque;
-#define MSS 4000
+#define MSS 4500
 //#define MSS 10
 #define BUFFERSIZE 4096
 #define RTT 25*1000
