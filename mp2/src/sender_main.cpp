@@ -209,7 +209,7 @@ void sender(FILE *fp){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=16.0;
+    cwindow->window_size=10.0;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -249,11 +249,11 @@ void send_new(FILE *fp){
     
     for (int i=0; i<int(cwindow->window_size)-have_send_num;i++){
         //start send package one by one
-        if (pkt_q.empty()==1){
-            state=2;//go to wait for all ack
-            return;
+        // if (pkt_q.empty()==1){
+        //     state=2;//go to wait for all ack
+        //     return;
 
-        }  
+        // }  
 
         if (sendto(s, pkt_q.front(), sizeof(pack_struct), 0, (struct sockaddr *)&si_other, sizeof(si_other)) < 0) {
 	        perror("send_error");
@@ -309,7 +309,7 @@ void wait(){
         //dupack condition
         if(last_ack_num==3){ 
             //for speed
-            //cwindow->window_size=cwindow->window_size/2;
+            cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             //window_mode=1;   
             state=1;         
@@ -340,33 +340,39 @@ void wait(){
             state=0;
         }
 
-        int window_position = ack_struct-cwindow->head_id;
-        if(cwindow->window_size-1==window_position){
-            if(window_mode==0){
-                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-                if (2*cwindow->window_size <= SLOWSTART_CW){
-                    cwindow->window_size=cwindow->window_size*2;
-                }
-                else if(cwindow->window_size<SLOWSTART_CW){
-                    //fast recovery
-                    cwindow->window_size = SLOWSTART_CW;
-                }
-                else{
-                    cwindow->window_size=cwindow->window_size+1;
-                }
+        //int window_position = ack_struct-cwindow->head_id;
 
+        if(window_mode==0){
+            cwindow->head_id = ack_struct+1 ;
+            if (2*cwindow->window_size <= SLOWSTART_CW){
+                cwindow->window_size=cwindow->window_size*2;
+            }
+            else if(cwindow->window_size<SLOWSTART_CW){
+                //fast recovery
+                cwindow->window_size = SLOWSTART_CW;
             }
             else{
-                // all packages in window are ack
-                cwindow->head_id = cwindow->head_id + cwindow->window_size ;
-                cwindow->window_size=cwindow->window_size+1;
+                cwindow->window_size=cwindow->window_size+1.0;
             }
+
         }
+        else{
+            // all packages in window are ack
+            cwindow->head_id = ack_struct+1  ;
+            cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
+        }
+        
 
     }
     else{
         for(int j=0;j<ack_struct-cwindow->head_id;j++){
             pkt_q_copy.pop_front();
+        }
+        if(window_mode==0){
+            cwindow->window_size=cwindow->window_size+1;
+        }
+        else{
+            cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
         }
         //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
         //state=1; //just resend 
