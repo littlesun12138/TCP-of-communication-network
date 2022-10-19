@@ -209,7 +209,7 @@ void sender(FILE *fp){
     // pkt_q_copy.push_back(pkt_q->front());
     // pkt_q.pop_front();
      //intialize congestion window as size 1
-    cwindow->window_size=10.0;
+    cwindow->window_size=15.0;
     cwindow->head_id=1;
     //clock_t startTime = clock(); 
     while(ack_all_flag==0){
@@ -273,11 +273,119 @@ void timeout(){
     state=2;//go to wait    
 }
 
+// void wait(){
+//     int k;
+//     int ack_struct;
+//     tv_out.tv_sec = 0;
+//     tv_out.tv_usec = 25 * 1000;
+//     //set time out mode
+//     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
+//     if(k == -1){
+//         diep((char*)"setsockopt_error");
+//     }
+//     //int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0,NULL, NULL);
+//     int numbytes = recvfrom(s, &ack_struct, sizeof(unsigned int) , 0, (struct sockaddr *)&si_other, &slen);
+//     //recieve nothing case
+//     if(numbytes<0){
+//         state = 1;
+//         if(errno==EAGAIN){
+            
+//             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
+//             cwindow->window_size=cwindow->window_size/2;
+//             cwindow->head_id=pkt_q_copy.front()->pack_id;
+//             window_mode=0;
+//             return;
+
+//         }
+//         else{
+//             diep((char*)"EAGAIN");
+//         }
+//     }
+
+
+//     //check ack content
+//     if(ack_struct==last_ack){
+//         last_ack_num=last_ack_num+1;
+//         //dupack condition
+//         if(last_ack_num==3){ 
+//             //for speed
+//             cwindow->window_size=cwindow->window_size/2;
+//             cwindow->head_id=pkt_q_copy.front()->pack_id;
+//             //window_mode=1;   
+//             state=1;         
+//             return;
+//         }
+//     }
+//     else{
+//         last_ack=ack_struct;
+//         last_ack_num=1; //update new ack
+//     }
+    
+
+
+//     if(pkt_q_copy.front()->pack_id > ack_struct){
+//         state=2; //
+//     }
+
+//     //window
+//     else if(pkt_q_copy.front()->pack_id == ack_struct){
+//         pkt_q_copy.pop_front();
+//         if(pkt_q.empty()==1 && read_all_flag==1){//no more window shift
+//             if(pkt_q_copy.empty()==1){
+//                 //all ack
+//                 ack_all_flag=1; //all end
+//             }
+//         }
+//         else{//set to send more mode because window should shift
+//             state=0;
+//         }
+
+//         //int window_position = ack_struct-cwindow->head_id;
+
+//         if(window_mode==0){
+//             cwindow->head_id = ack_struct+1 ;
+//             if (2*cwindow->window_size <= SLOWSTART_CW){
+//                 cwindow->window_size=cwindow->window_size*2;
+//             }
+//             else if(cwindow->window_size<SLOWSTART_CW){
+//                 //fast recovery
+//                 cwindow->window_size = SLOWSTART_CW;
+//             }
+//             else{
+//                 cwindow->window_size=cwindow->window_size+1.0;
+//             }
+
+//         }
+//         else{
+//             // all packages in window are ack
+//             cwindow->head_id = ack_struct+1  ;
+//             cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
+//         }
+        
+
+//     }
+//     else{
+//         for(int j=0;j<ack_struct-cwindow->head_id;j++){
+//             pkt_q_copy.pop_front();
+//         }
+//         if(window_mode==0){
+//             cwindow->window_size=cwindow->window_size+1;
+//         }
+//         else{
+//             cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
+//         }
+//         //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
+//         //state=1; //just resend 
+//     }
+
+
+// }
+
 void wait(){
     int k;
     int ack_struct;
     tv_out.tv_sec = 0;
-    tv_out.tv_usec = 25 * 1000;
+    tv_out.tv_usec = 40 * 1000;
     //set time out mode
     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
     if(k == -1){
@@ -291,9 +399,9 @@ void wait(){
         if(errno==EAGAIN){
             
             //SLOWSTART_CW=cwindow->window_size/2; //congestion avoidance
-            cwindow->window_size=cwindow->window_size/2;
+            //cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
-            window_mode=0;
+            //window_mode=0;
             return;
 
         }
@@ -309,7 +417,7 @@ void wait(){
         //dupack condition
         if(last_ack_num==3){ 
             //for speed
-            cwindow->window_size=cwindow->window_size/2;
+            //cwindow->window_size=cwindow->window_size/2;
             cwindow->head_id=pkt_q_copy.front()->pack_id;
             //window_mode=1;   
             state=1;         
@@ -342,46 +450,19 @@ void wait(){
 
         //int window_position = ack_struct-cwindow->head_id;
 
-        if(window_mode==0){
-            cwindow->head_id = ack_struct+1 ;
-            if (2*cwindow->window_size <= SLOWSTART_CW){
-                cwindow->window_size=cwindow->window_size*2;
-            }
-            else if(cwindow->window_size<SLOWSTART_CW){
-                //fast recovery
-                cwindow->window_size = SLOWSTART_CW;
-            }
-            else{
-                cwindow->window_size=cwindow->window_size+1.0;
-            }
+        cwindow->head_id = ack_struct+1 ;
 
-        }
-        else{
-            // all packages in window are ack
-            cwindow->head_id = ack_struct+1  ;
-            cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
-        }
         
 
     }
     else{
-        for(int j=0;j<ack_struct-cwindow->head_id;j++){
+        for(int j=0;j<=ack_struct-cwindow->head_id;j++){
             pkt_q_copy.pop_front();
-        }
-        if(window_mode==0){
-            cwindow->window_size=cwindow->window_size+1;
-        }
-        else{
-            cwindow->window_size=cwindow->window_size+1.0/cwindow->window_size;
         }
         //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
         //state=1; //just resend 
     }
-
-
 }
-
-
 // void wait(){
 //     int k;
 //     int ack_struct;
