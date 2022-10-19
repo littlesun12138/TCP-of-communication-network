@@ -170,7 +170,7 @@ void reliablyTransfer(char* hostname, unsigned short int hostUDPport, char* file
 }
 
 void dividepacket(FILE* fp){
-    int pack_num=300;
+    int pack_num=400;
     //unsigned long long int bytes_count=0;
     //int package_id=0;
     //pack_num= ceil(bytesToTransfer * 1.0 / MSS);// packages number need to hold the whole file
