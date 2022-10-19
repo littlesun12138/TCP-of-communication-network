@@ -385,7 +385,7 @@ void wait(){
     int k;
     int ack_struct;
     tv_out.tv_sec = 0;
-    tv_out.tv_usec = 40 * 1000;
+    tv_out.tv_usec = 30 * 1000;
     //set time out mode
     k = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv_out, sizeof(tv_out));
     if(k == -1){
@@ -459,6 +459,7 @@ void wait(){
         for(int j=0;j<=ack_struct-cwindow->head_id;j++){
             pkt_q_copy.pop_front();
         }
+        cwindow->head_id = ack_struct+1 ;
         //(pkt_q_copy.front()->pack_id < ack_struct) impossible maybe
         //state=1; //just resend 
     }
