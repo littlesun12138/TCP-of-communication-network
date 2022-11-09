@@ -132,7 +132,7 @@ void dj_foward_table(unordered_map<int,pair<int,int>> *ftable,unordered_map<int,
                     fpOut << end << " " << next_hop << " " << cost << endl;
                 }
             }
-            fpOut<<endl;
+            //fpOut<<endl;
     }
 }
 void change_top(int start,int end, int cost){
@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
         fpOut<<"message"<<" "<<msg_vector[i].extra_info<<endl;
         
     }
-    fpOut<<endl;
+    //fpOut<<endl;
 
     //Now change topo
     int new_val;
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
         fpOut<<"message"<<" "<<msg_vector[i].extra_info<<endl;
         
         }
-    fpOut<<endl;
+    //fpOut<<endl;
     }
 
     //Done!
