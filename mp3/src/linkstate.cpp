@@ -137,12 +137,12 @@ void dj_foward_table(unordered_map<int, pair<int, int>>* ftable, unordered_map<i
             start = *z;
             end = *l;
             int next_hop = end;
-            if (ctable[start][end].second >= 0) {
+            if (ftable[start][end].second >= 0) {
                 for (next_hop = end; ctable[start][next_hop].first != start;) {
                     next_hop = ctable[start][next_hop].first;
                 }
-                ctable[start][end].first = next_hop;
-                int cost = ctable[start][end].second;
+                ftable[start][end].first = next_hop;
+                int cost = ftable[start][end].second;
                 fpOut << end << " " << next_hop << " " << cost << endl;
             }
         }
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
             else {
                 fpOut << "infinite hops unreachable ";
             }
-            fpOut << "message" << " " << msg_vector[i].extra_info << endl;
+            fpOut << "message" << msg_vector[i].extra_info << endl;
 
         }
 
