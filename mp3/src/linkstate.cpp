@@ -137,12 +137,12 @@ void dj_foward_table(unordered_map<int, pair<int, int>>* ftable, unordered_map<i
             start = *z;
             end = *l;
             int next_hop = end;
-            if (ftable[start][end].second >= 0) {
+            if (ctable[start][end].second >= 0) {
                 for (next_hop = end; ctable[start][next_hop].first != start;) {
                     next_hop = ctable[start][next_hop].first;
                 }
-                ftable[start][end].first = next_hop;
-                int cost = ftable[start][end].second;
+                ctable[start][end].first = next_hop;
+                int cost = ctable[start][end].second;
                 fpOut << end << " " << next_hop << " " << cost << endl;
             }
         }
