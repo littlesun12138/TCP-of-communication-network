@@ -23,9 +23,14 @@ using namespace std;
 //Define new structure for topo file
 
 //Adj mat
-int p[MAX_NODE_VAL][MAX_NODE_VAL];
-//True noend num
-int noend_num=0;
+typedef struct graph
+{
+    int p[MAX_NODE_VAL][MAX_NODE_VAL];
+}graph;
+graph gg;
+// int gg.p[MAX_NODE_VAL][MAX_NODE_VAL];
+//True node num
+int node_num = 0;
 
 //Define new structure for msg file
 typedef struct message {
@@ -33,85 +38,90 @@ typedef struct message {
     int end_id;
     string extra_info;
 
-    message(int start_id, int end_id, string extra_info) : 
-    start_id(start_id), end_id(end_id), extra_info(extra_info) {}
+    message(int start_id, int end_id, string extra_info) :
+        start_id(start_id), end_id(end_id), extra_info(extra_info) {}
 } msgg;
 vector<message> msg_vector;
 
 set<int> iter_node;
 void init_top();
-void read_top(ifstream &topfile);
-void change_top(int start,int end, int cost);
+void read_top(ifstream& topfile);
 
-void init_top(){
-    for(int i = 1; i < MAX_NODE; ++i){
-        for(int j = 1; j < MAX_NODE; ++j){
-            if(i==j){
-                p[i][j] = 0;
-            }else{
-                p[i][j] = VAL_INF;
+
+void init_top() {
+    for (int i = 1; i < MAX_NODE; ++i) {
+        for (int j = 1; j < MAX_NODE; ++j) {
+            if (i == j) {
+                gg.p[i][j] = 0;
+            }
+            else {
+                gg.p[i][j] = VAL_INF;
             }
         }
     }
 }
 
-void read_top(ifstream &topfile){
+void read_top(ifstream& topfile) {
     int start;
     int end;
     int cost;
 
-    while(topfile >> start >> end >> cost){
+    while (topfile >> start >> end >> cost) {
         iter_node.insert(start);
         iter_node.insert(end);
-        p[end][start] = cost;
-        p[start][end] = cost;
+        gg.p[end][start] = cost;
+        gg.p[start][end] = cost;
     }
-    noend_num = iter_node.size();
+    node_num = *iter_node.rbegin();
+    for(int i = 1;i<=node_num;i++){
+        iter_node.insert(i);
+    }
 }
-void dj_foward_table(unordered_map<int,pair<int,int>> *ftable,unordered_map<int,pair<int,int>> *ctable,ofstream &fpOut){
+void dj_foward_table(unordered_map<int, pair<int, int>>* ftable, unordered_map<int, pair<int, int>>* ctable, ofstream& fpOut) {
 
-    int noend_num_val = noend_num + 1;
-    int *vis = new int [noend_num_val]; // 0 means not vistied
-    int start,end,min_cost,min_node;
+    int node_num_val = node_num + 1;
+    int* vis = new int[node_num_val]; // 0 means not vistied
+    int start, end, min_cost, min_node;
     // Init Cost table
-    for(auto a=iter_node.begin();a!= iter_node.end();a++){
-        for(auto b=iter_node.begin();b!= iter_node.end();b++){
-            ctable[*a][*b] = make_pair(*a,p[*a][*b]);
+    for (auto a = iter_node.begin(); a != iter_node.end(); a++) {
+        for (auto b = iter_node.begin(); b != iter_node.end(); b++) {
+            ctable[*a][*b] = make_pair(*a, gg.p[*a][*b]);
         }
     }
 
-    for(auto i=iter_node.begin();i!=iter_node.end();i++){
+    for (auto i = iter_node.begin(); i != iter_node.end(); i++) {
         start = *i;
 
-        memset(vis, 0, noend_num_val*sizeof(int));
+        memset(vis, 0, node_num_val * sizeof(int));
+        
         //Set start node value 
         vis[start] = VISITED;
         min_node = start;
         min_cost = 0;
-        //Tranverse all neighbor noend
-        for(int k = 1;k < noend_num; k++ ){
-            for(auto l=iter_node.begin();l != iter_node.end(); l++){
+        //Tranverse all neighbor node
+        for (int k = 1; k < node_num; k++) {
+            for (auto l = iter_node.begin(); l != iter_node.end(); l++) {
                 end = *l;
-                int new_cost = min_cost + p[min_node][end];
+                int new_cost = min_cost + gg.p[min_node][end];
                 int old_cost = ctable[start][end].second;
 
-                if( (vis[end]==NOT_VIS) && (p[min_node][end] >=0) && (new_cost<old_cost || old_cost<0)){
-                    ctable[start][end] = make_pair(min_node,new_cost);
+                if ((vis[end] == NOT_VIS) && (gg.p[min_node][end] >= 0) && (new_cost < old_cost || old_cost < 0)) {
+                    ctable[start][end] = make_pair(min_node, new_cost);
                 }
 
-                new_cost = min_cost + p[min_node][end];
+                new_cost = min_cost + gg.p[min_node][end];
                 old_cost = ctable[start][end].second;
-                if( (vis[end]==NOT_VIS) && (p[min_node][end] >=0) && (new_cost<old_cost || old_cost<0)){
-                    if(min_node < ctable[start][end].first){
-                        ctable[start][end] = make_pair(min_node,new_cost);
+                if ((vis[end] == NOT_VIS) && (gg.p[min_node][end] >= 0) && (new_cost < old_cost || old_cost < 0)) {
+                    if (min_node < ctable[start][end].first) {
+                        ctable[start][end] = make_pair(min_node, new_cost);
                     }
                 }
             }
             min_cost = INF;
-            for(auto l=iter_node.begin();l != iter_node.end(); l++){
+            for (auto l = iter_node.begin(); l != iter_node.end(); l++) {
                 end = *l;
                 int temp_cost = ctable[start][end].second;
-                if(temp_cost<min_cost && temp_cost>=0 && vis[end]==0){
+                if (temp_cost < min_cost && temp_cost >= 0 && vis[end] == 0) {
                     min_node = end;
                     min_cost = temp_cost;
                 }
@@ -120,23 +130,28 @@ void dj_foward_table(unordered_map<int,pair<int,int>> *ftable,unordered_map<int,
         }
         ftable[start] = ctable[start];
         //Backtrace paths and print txt
-        for(auto l=iter_node.begin();l != iter_node.end(); l++){
-                end = *l;
-                int next_hop = end;
-                if(ftable[start][end].second >= 0){
-                    for(next_hop = end;ctable[start][next_hop].first != start;){
-                        next_hop = ctable[start][next_hop].first;
-                    }
-                    ftable[start][end].first = next_hop;
-                    int cost = ftable[start][end].second;
-                    fpOut << end << " " << next_hop << " " << cost << endl;
+
+    }    
+    for (auto z = iter_node.begin(); z != iter_node.end(); z++) { 
+        for (auto l = iter_node.begin(); l != iter_node.end(); l++) {
+            start = *z;
+            end = *l;
+            int next_hop = end;
+            if (ftable[start][end].second >= 0) {
+                for (next_hop = end; ctable[start][next_hop].first != start;) {
+                    next_hop = ctable[start][next_hop].first;
                 }
+                ftable[start][end].first = next_hop;
+                int cost = ftable[start][end].second;
+                fpOut << end << " " << next_hop << " " << cost << endl;
             }
-            //fpOut<<endl;
+        }
     }
+    
 }
-void change_top(int start,int end, int cost){
-    p[start][end] = p[end][start] = cost;
+void change_top(int start, int end, int cost) {
+    gg.p[start][end]  = cost;
+    gg.p[end][start]  = cost;
 }
 
 int main(int argc, char** argv) {
@@ -147,8 +162,8 @@ int main(int argc, char** argv) {
     }
     int start_id;
     int end_id;
-    unordered_map<int,pair<int,int>> ftable[MAX_NODE_VAL];
-    unordered_map<int,pair<int,int>> ctable[MAX_NODE_VAL];
+    unordered_map<int, pair<int, int>> ftable[MAX_NODE_VAL];
+    unordered_map<int, pair<int, int>> ctable[MAX_NODE_VAL];
 
     ofstream fpOut("output.txt");
     //Read topofile
@@ -157,14 +172,14 @@ int main(int argc, char** argv) {
     std::ifstream msgfile(argv[2]);
     //Read change file
     std::ifstream chgfile(argv[3]);
-    
+
     //Get top graph
     init_top();
     read_top(topfile);
-    
+
 
     //DJ now!
-    dj_foward_table(ftable,ctable,fpOut);
+    dj_foward_table(ftable, ctable, fpOut);
 
     //Now Faward tables send out 
     //Send message from message file
@@ -173,65 +188,71 @@ int main(int argc, char** argv) {
     if (msgfile.is_open()) {
         //Read line by line
         std::string line;
-        while(getline(msgfile, line)) {
+        while (getline(msgfile, line)) {
             string extra_msg;
-            sscanf(line.c_str(),"%d %d %*s", &start_id,&end_id);
+            sscanf(line.c_str(), "%d %d %*s", &start_id, &end_id);
             string temp = line.substr(line.find(" "));
-            extra_msg = temp.substr(line.find(" ") + 1); 
-            msgg new_line_msg(start_id,end_id,extra_msg);
+            extra_msg = temp.substr(line.find(" ") + 1);
+            msgg new_line_msg(start_id, end_id, extra_msg);
             // printf("%s", line.c_str());
             msg_vector.push_back(new_line_msg);
         }
         msgfile.close();
     }
-    
-    for(int i=0;i<msg_vector.size();i++){
+
+    for (int i = 0; i < msg_vector.size(); i++) {
         fpOut << "from" << " " << msg_vector[i].start_id << " " << "to" << " " << msg_vector[i].end_id << " cost ";
         int cost = ftable[msg_vector[i].start_id][msg_vector[i].end_id].second;
-        if(cost>0){
-            fpOut<<cost<<" hops ";
-            for(int tem = msg_vector[i].start_id;tem!=msg_vector[i].end_id;){
-                fpOut<<tem<<" ";
+        if (cost > 0) {
+            fpOut << cost << " hops ";
+            for (int tem = msg_vector[i].start_id; tem != msg_vector[i].end_id;) {
+                fpOut << tem << " ";
                 tem = ftable[tem][msg_vector[i].end_id].first;
             }
-        }else if (cost==0)
-        {
-            fpOut<<"0"<<" hops ";
-        }else{
-            fpOut<<"infinite hops unreachable ";
         }
-        fpOut<<"message"<<" "<<msg_vector[i].extra_info<<endl;
-        
+        else if (cost == 0)
+        {
+            fpOut << "0" << " hops ";
+        }
+        else {
+            fpOut << "infinite hops unreachable ";
+        }
+        fpOut << "message" << " " << msg_vector[i].extra_info << endl;
+
     }
-    //fpOut<<endl;
+
 
     //Now change topo
     int new_val;
-    while(chgfile >> start_id >> end_id >> new_val){
-        change_top(start_id,end_id,new_val);
+    while (chgfile >> start_id >> end_id >> new_val) {
+        change_top(start_id, end_id, new_val);
         //DJ each change
-        dj_foward_table(ftable,ctable,fpOut);
+        ftable->clear();
+        ctable->clear();
+        dj_foward_table(ftable, ctable, fpOut);
 
         //Send msg again
-        for(int i=0;i<msg_vector.size();i++){
-        fpOut << "from" << " " << msg_vector[i].start_id << " " << "to" << " " << msg_vector[i].end_id << " cost ";
-        int cost = ftable[msg_vector[i].start_id][msg_vector[i].end_id].second;
-        if(cost>0){
-            fpOut<<cost<<" hops ";
-            for(int tem = msg_vector[i].start_id;tem!=msg_vector[i].end_id;){
-                fpOut<<tem<<" ";
-                tem = ftable[tem][msg_vector[i].end_id].first;
+        for (int i = 0; i < msg_vector.size(); i++) {
+            fpOut << "from" << " " << msg_vector[i].start_id << " " << "to" << " " << msg_vector[i].end_id << " cost ";
+            int cost = ftable[msg_vector[i].start_id][msg_vector[i].end_id].second;
+            if (cost > 0) {
+                fpOut << cost << " hops ";
+                for (int tem = msg_vector[i].start_id; tem != msg_vector[i].end_id;) {
+                    fpOut << tem << " ";
+                    tem = ftable[tem][msg_vector[i].end_id].first;
+                }
             }
-        }else if (cost==0)
-        {
-            fpOut<<"0"<<" hops ";
-        }else{
-            fpOut<<"infinite hops unreachable ";
+            else if (cost == 0)
+            {
+                fpOut << "0" << " hops ";
+            }
+            else {
+                fpOut << "infinite hops unreachable ";
+            }
+            fpOut << "message" << " " << msg_vector[i].extra_info << endl;
+
         }
-        fpOut<<"message"<<" "<<msg_vector[i].extra_info<<endl;
-        
-        }
-    //fpOut<<endl;
+
     }
 
     //Done!
