@@ -111,7 +111,7 @@ void dj_foward_table(unordered_map<int, pair<int, int>>* ftable, unordered_map<i
 
                 new_cost = min_cost + gg.p[min_node][end];
                 old_cost = ctable[start][end].second;
-                if ((vis[end] == NOT_VIS) && (gg.p[min_node][end] >= 0) && (new_cost < old_cost || old_cost < 0)) {
+                if ((vis[end] == NOT_VIS) && (gg.p[min_node][end] >= 0) && (new_cost <= old_cost || old_cost < 0)) {
                     if (min_node < ctable[start][end].first) {
                         ctable[start][end] = make_pair(min_node, new_cost);
                     }
