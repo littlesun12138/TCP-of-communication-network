@@ -60,6 +60,7 @@ float toy_simulator(){
                     collision_array.push_back(j);
                 }
             }
+
             if(ready_node_num==0){
                 //cout <<  "1111" << endl;
                 for(int j =0;j<NodeArray.size();j++){
@@ -108,12 +109,16 @@ float toy_simulator(){
             transmitime_left=transmitime_left-1;
             if(transmitime_left==0){
                 channelOccupied=0;
+                //
+                NodeArray[cur_node_id].collisions=0;
                 set_backoff(&NodeArray[cur_node_id],Rarray,i+1);
             } 
 
         }
     }
+    cout << slots_num<<endl;
     return (slots_num*1.00/T);
+    
 }
 
 
