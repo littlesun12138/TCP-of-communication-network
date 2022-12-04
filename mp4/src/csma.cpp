@@ -49,7 +49,7 @@ float toy_simulator(){
     }
     //large time ticks loop
     for (int i=0; i<T; i++) {
-        cout << i <<  endl;
+        //cout << i <<  endl;
         //check whether channel is idle
         if(channelOccupied==0){
             ready_node_num=0;
