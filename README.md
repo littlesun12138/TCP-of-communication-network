@@ -1,5 +1,5 @@
-# CS 438 (fa22) repo for NetID: shixinc2
+This is an MP Repository for the ECE438 communication network course of UIUC.
 
-GitHub username at initialization time: littlesun12138
+In mp1 and mp2 we built a TCP protocol by UDP transmission using Python.
 
-For next steps, please refer to the instructions provided by your course.
+In mp3 we implement link state and Dijkstra's Algorithm to optimize the network graph scheduling.
